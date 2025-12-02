@@ -12,8 +12,8 @@ public class Customer extends Person {
     private int failedLoginAttempts;
     private Role role;
 
-    public Customer(String id, String firstName, String lastName, String email, String password){
-        super(id, firstName, lastName, email, password);
+    public Customer(String firstName, String lastName, String email, String password){
+        super(firstName, lastName, email, password);
 
         this.accounts = new ArrayList<>();
         this.isLocked = false;

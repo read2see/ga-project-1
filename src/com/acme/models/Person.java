@@ -3,18 +3,20 @@ package com.acme.models;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
 import com.acme.utils.Hash;
 
 public abstract class Person {
 
-    private String id;
+    private UUID id;
     private String firstName;
     private String lastName;
     private String email;
     private String encryptedPassword;
 
-    public Person(String id, String firstName, String lastName, String email, String password){
-        this.id = id;
+    public Person(String firstName, String lastName, String email, String password){
+        this.id = UUID.randomUUID();
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
@@ -49,11 +51,11 @@ public abstract class Person {
         this.encryptedPassword = Hash.make(password);
     }
 
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

@@ -7,8 +7,8 @@ public class Banker extends Person {
     private Role role;
     private String employeeNumber;
 
-    public Banker(String id, String firstName, String lastName, String email, String password, String employeeNumber){
-        super(id, firstName, lastName, email, password);
+    public Banker(String firstName, String lastName, String email, String password, String employeeNumber){
+        super(firstName, lastName, email, password);
 
         this.role = BANKER;
         this.employeeNumber = employeeNumber;
