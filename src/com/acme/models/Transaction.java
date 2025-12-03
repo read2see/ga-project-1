@@ -17,20 +17,24 @@ public class Transaction {
     private BigDecimal postBalance;
     private Optional<Account> destAccount;
 
-    public Transaction(String var1, Account var2, BigDecimal var3, Optional<Account> var4) {
-        this.accountNumber = var2.getAccountNumber();
-        this.description = this.getDetailedDescription(var1, var3, var4);
+    public Transaction(String type, Account originalAccount, BigDecimal amount, Optional<Account> destAccount) {
+        this.accountNumber = originalAccount.getAccountNumber();
+        this.description = this.getDetailedDescription(type, amount, destAccount);
         this.createdAt = LocalDateTime.now();
-        this.type = var1;
-        this.amount = var3;
-        this.postBalance = var2.getBalance();
-        if (var4.isPresent()) {
-            this.destAccount = var4;
+        this.type = type;
+        this.amount = amount;
+        this.postBalance = originalAccount.getBalance();
+        if (destAccount.isPresent()) {
+            this.destAccount = destAccount;
         }
-
     }
 
-    public String getDetailedDescription(String var1, BigDecimal var2, Optional<Account> var3) {
-        return var3.isPresent() ? ((String)descriptionsTemplates.get(var1)).formatted(var2, var3) : ((String)descriptionsTemplates.get(var1)).formatted(var2);
+    public String getDetailedDescription(String type, BigDecimal amount, Optional<Account> destAccount){
+
+        if(destAccount.isPresent()){
+            return descriptionsTemplates.get(type).formatted(amount, destAccount);
+        }
+
+        return descriptionsTemplates.get(type).formatted(amount);
     }
 }

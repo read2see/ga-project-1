@@ -7,8 +7,8 @@ public class Customer extends Person {
     private Optional<CheckingAccount> checkingAccount;
     private Role role;
 
-    public Customer(String var1, String var2, String var3, String var4) {
-        super(var1, var2, var3, var4);
+    public Customer(String firstName, String lastName, String email, String password) {
+        super(firstName, lastName, email, password);
         this.role = Role.CUSTOMER;
         this.savingsAccount = Optional.empty();
         this.checkingAccount = Optional.empty();
@@ -18,26 +18,26 @@ public class Customer extends Person {
         return this.role;
     }
 
-    public void createSavingsAccount(String var1) {
+    public void createSavingsAccount(String password) {
         if (this.savingsAccount.isEmpty()) {
-            this.savingsAccount = Optional.of(new SavingsAccount(this.getId(), var1));
+            this.savingsAccount = Optional.of(new SavingsAccount(this.getId(), password));
         }
 
     }
 
-    public void createCheckingAccount(String var1) {
+    public void createCheckingAccount(String password) {
         if (this.checkingAccount.isEmpty()) {
-            this.checkingAccount = Optional.of(new CheckingAccount(this.getId(), var1));
+            this.checkingAccount = Optional.of(new CheckingAccount(this.getId(), password));
         }
 
     }
 
-    public void setSavingsAccount(Optional<SavingsAccount> var1) {
-        this.savingsAccount = var1;
+    public void setSavingsAccount(Optional<SavingsAccount> savingAccount) {
+        this.savingsAccount = savingAccount;
     }
 
-    public void setCheckingAccount(Optional<CheckingAccount> var1) {
-        this.checkingAccount = var1;
+    public void setCheckingAccount(Optional<CheckingAccount> checkingAccount) {
+        this.checkingAccount = checkingAccount;
     }
 
     public Optional<SavingsAccount> getSavingsAccount() {

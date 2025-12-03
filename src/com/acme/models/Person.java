@@ -14,11 +14,11 @@ public abstract class Person {
     private boolean isLocked;
     private LocalDateTime lockUntil;
 
-    public Person(String var1, String var2, String var3, String var4) {
-        this.firstName = var1;
-        this.lastName = var2;
-        this.email = var3;
-        this.encryptedPassword = Hash.make(var4);
+    public Person(String firstName, String lastName, String email, String password) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.encryptedPassword = Hash.make(password);
         this.failedLoginAttempts = 0;
         this.isLocked = false;
     }
@@ -27,8 +27,8 @@ public abstract class Person {
         return this.firstName;
     }
 
-    public void setFirstName(String var1) {
-        this.firstName = var1;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
     public String getFullName() {
@@ -39,20 +39,20 @@ public abstract class Person {
         return this.lastName;
     }
 
-    public void setLastName(String var1) {
-        this.lastName = var1;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public String getEmail() {
         return this.email;
     }
 
-    public void setEmail(String var1) {
-        this.email = var1;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
-    public void setPassword(String var1) {
-        this.encryptedPassword = Hash.make(var1);
+    public void setPassword(String password) {
+        this.encryptedPassword = Hash.make(password);
     }
 
     public UUID getId() {
@@ -63,16 +63,16 @@ public abstract class Person {
         return this.encryptedPassword;
     }
 
-    public void setEncryptedPassword(String var1) {
-        this.encryptedPassword = var1;
+    public void setEncryptedPassword(String password) {
+        this.encryptedPassword = password;
     }
 
     public boolean isLocked() {
         return this.isLocked;
     }
 
-    public void setLocked(boolean var1) {
-        this.isLocked = var1;
+    public void setLocked(boolean isLocked) {
+        this.isLocked = isLocked;
     }
 
     public void incrementFailedLoginAttempts() {
@@ -87,8 +87,8 @@ public abstract class Person {
         return this.failedLoginAttempts;
     }
 
-    public void setFailedLoginAttempts(int var1) {
-        this.failedLoginAttempts = var1;
+    public void setFailedLoginAttempts(int failedLoginAttempts) {
+        this.failedLoginAttempts = failedLoginAttempts;
     }
 
     public abstract String toJson();
