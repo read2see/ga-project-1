@@ -50,6 +50,21 @@ public class Customer extends Person {
 
     @Override
     public String toJson() {
-        return "{\"id\": \"%s\"}".formatted(this.getId());
+        return ("{\"id\": \"%s\"," +
+                "\"firstName\": %s" +
+                "\"lastName\": %s" +
+                "\"email\": %s" +
+                "\"failedLoginAttempts\": %d" +
+                "\"\"" +
+                "\"\"" +
+                "\"\"" +
+                "\"\"" +
+                "}").formatted(
+                        this.getId(),
+                        this.getFirstName(),
+                        this.getLastName(),
+                        this.getEmail(),
+                        this.getFailedLoginAttempts()
+                );
     }
 }

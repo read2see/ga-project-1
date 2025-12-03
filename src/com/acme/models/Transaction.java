@@ -37,4 +37,6 @@ public class Transaction {
 
         return descriptionsTemplates.get(type).formatted(amount);
     }
+
+
 }

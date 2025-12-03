@@ -13,4 +13,6 @@ public class SavingsAccount extends Account {
     public SavingsAccount(UUID userId, String password, BigDecimal balance) {
         super(userId, password, balance);
     }
+
+
 }
