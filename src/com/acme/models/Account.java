@@ -2,74 +2,66 @@ package com.acme.models;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.UUID;
 
-public class Account {
-
-    private UUID customerId;
+public abstract class Account {
+    private UUID userId;
     private boolean isActive;
     private String encryptedPassword;
-    private String accountNumber;
-    private AccountType type;
+    private final UUID accountNumber;
     private BigDecimal balance;
     private int overdraftCount;
-    private ArrayList<Card> cards;
-    final private BigDecimal overdraftPenalty = new BigDecimal("35.0");
+    private ArrayList<CreditCard> creditCards;
+    private final BigDecimal overdraftPenalty = new BigDecimal("35.0");
 
-    public Account(UUID customerId, String accountNumber, String password, AccountType type, BigDecimal balance){
-        this.customerId = customerId;
-        this.accountNumber = accountNumber;
+    public Account(UUID balance, String password) {
+        this.userId = balance;
+        this.accountNumber = UUID.randomUUID();
         this.encryptedPassword = password;
-        this.type = type;
-        this.balance = balance;
-        this.cards = new ArrayList<>();
+        this.creditCards = new ArrayList();
         this.overdraftCount = 0;
         this.isActive = true;
+        this.balance = BigDecimal.ZERO;
     }
 
-    public boolean addCard(Card card){
+    public Account(UUID userId, String password, BigDecimal balance) {
+        this.userId = userId;
+        this.accountNumber = UUID.randomUUID();
+        this.encryptedPassword = password;
+        this.creditCards = new ArrayList();
+        this.overdraftCount = 0;
+        this.isActive = true;
+        this.balance = balance;
+    }
 
-        boolean isAllowed = this.cards.stream().filter(c -> c.getType().equals(card.getType())).toList().isEmpty();
+    public boolean addCard(CreditCard card){
+
+        boolean isAllowed = this.creditCards.stream().filter(c -> c.getType().equals(card.getType())).toList().isEmpty();
 
         if(!isAllowed){
             return false;
         }
 
-        this.cards.add(card);
+        this.creditCards.add(card);
 
         return true;
     }
 
-    public boolean removeCard(Card card){
+    public boolean removeCard(CreditCard card) {
         return false;
     }
 
-    public String getEncryptedPassword() {
-        return encryptedPassword;
+    public void setEncryptedPassword(String password) {
+        this.encryptedPassword = password;
     }
 
-    public void setEncryptedPassword(String encryptedPassword) {
-        this.encryptedPassword = encryptedPassword;
-    }
-
-    public String getAccountNumber() {
-        return accountNumber;
-    }
-
-    public void setAccountNumber(String accountNumber) {
-        this.accountNumber = accountNumber;
-    }
-
-    public AccountType getType() {
-        return type;
-    }
-
-    public void setType(AccountType type) {
-        this.type = type;
+    public UUID getAccountNumber() {
+        return this.accountNumber;
     }
 
     public BigDecimal getBalance() {
-        return balance;
+        return this.balance;
     }
 
     public void setBalance(BigDecimal balance) {
@@ -77,52 +69,60 @@ public class Account {
     }
 
     public int getOverdraftCount() {
-        return overdraftCount;
+        return this.overdraftCount;
     }
 
-    public void setOverdraftCount(int overdraftCount) {
-        this.overdraftCount = overdraftCount;
+    public void setOverdraftCount(int count) {
+        this.overdraftCount = count;
     }
 
-    public ArrayList<Card> getCards() {
-        return cards;
+    public ArrayList<CreditCard> getCards() {
+        return this.creditCards;
     }
 
-    public void setCards(ArrayList<Card> cards) {
-        this.cards = cards;
+    public void setCards(ArrayList<CreditCard> cards) {
+        this.creditCards = cards;
     }
 
     public BigDecimal deposit(BigDecimal amount) {
-        if(amount.compareTo(new BigDecimal("-0.0")) <= 0){
+        if (amount.compareTo(new BigDecimal("-0.0")) <= 0) {
             throw new RuntimeException("Deposit amount is negative.");
+        } else {
+            this.balance = this.balance.add(amount);
+            return this.balance;
         }
-        balance = balance.add(amount);
-        return balance;
     }
 
     public BigDecimal withdraw(BigDecimal amount) {
-        if (amount.compareTo(balance) < 0 && this.isActive) {
-            balance = balance.subtract(amount);
-            new Transaction("withdraw", this, amount, null);
-
-        } else if (overdraftCount < 2 && this.isActive){
-
-            balance = balance.subtract(amount);
-            new Transaction("withdraw", this, amount, null);
-
-            overdraftCount++;
-            setBalance(getBalance().subtract(overdraftPenalty));
-            new Transaction("overdraft", this, overdraftPenalty, null);
+        if (!this.isActive) {
+            System.out.println("Your account is deactivated, please resolve your negative balance to reactivate your account");
+            return this.balance;
         } else {
-            this.isActive = false;
-        }
+            if (amount.compareTo(this.balance) < 0) {
+                approveWithdrawal(amount);
+            } else if (overdraftCount < 2) {
+                approveWithdrawal(amount);
+                applyOverdraftFee();
+            } else {
+                this.isActive = false;
+            }
 
-        return balance;
+            return this.balance;
+        }
     }
 
-    public BigDecimal transfer(BigDecimal amount, Account destinationAccount){
-
+    public BigDecimal transfer(BigDecimal amount, Account destAccount) {
         return new BigDecimal("0.0");
     }
 
+    public void approveWithdrawal(BigDecimal amount) {
+        this.balance = this.balance.subtract(amount);
+        new Transaction("withdraw", this, amount, null);
+    }
+
+    public void applyOverdraftFee() {
+        ++this.overdraftCount;
+        this.setBalance(this.getBalance().subtract(this.overdraftPenalty));
+        new Transaction("overdraft", this, this.overdraftPenalty, null);
+    }
 }

@@ -5,44 +5,32 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 public class Transaction {
-
-    // Transaction descriptions
-    // withdraw
-    // deposit
-    // transfer
-    // overdraft
-
-    static HashMap<String, String> descriptionsTemplates = new HashMap<>(Map.of(
-            "withdraw", "withdrew %s",
-            "deposit", "deposited %s",
-            "transfer", "transferred %s to account no. %s",
-            "overdraft", "overdraft charge of %s"
-        ));
-
-    private String accountNumber;
+    static HashMap<String, String> descriptionsTemplates = new HashMap(Map.of("withdraw", "withdrew %s", "deposit", "deposited %s", "transfer", "transferred %s to account no. %s", "overdraft", "overdraft charge of %s"));
+    private UUID accountNumber;
     private String description;
     private LocalDateTime createdAt;
     private String type;
     private BigDecimal amount;
     private BigDecimal postBalance;
+    private Optional<Account> destAccount;
 
-    public Transaction(String type, Account originalAccount, BigDecimal amount, Optional<Account> destAccount) {
-        this.accountNumber = originalAccount.getAccountNumber();
-        this.description = getDetailedDescription(type, amount, destAccount);
+    public Transaction(String var1, Account var2, BigDecimal var3, Optional<Account> var4) {
+        this.accountNumber = var2.getAccountNumber();
+        this.description = this.getDetailedDescription(var1, var3, var4);
         this.createdAt = LocalDateTime.now();
-        this.type = type;
-        this.amount = amount;
-        this.postBalance = originalAccount.getBalance();
-    }
-
-    public String getDetailedDescription(String type, BigDecimal amount, Optional<Account> destAccount){
-
-        if(destAccount.isPresent()){
-            return descriptionsTemplates.get(type).formatted(amount, destAccount);
+        this.type = var1;
+        this.amount = var3;
+        this.postBalance = var2.getBalance();
+        if (var4.isPresent()) {
+            this.destAccount = var4;
         }
 
-        return descriptionsTemplates.get(type).formatted(amount);
+    }
+
+    public String getDetailedDescription(String var1, BigDecimal var2, Optional<Account> var3) {
+        return var3.isPresent() ? ((String)descriptionsTemplates.get(var1)).formatted(var2, var3) : ((String)descriptionsTemplates.get(var1)).formatted(var2);
     }
 }

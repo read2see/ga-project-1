@@ -1,64 +1,55 @@
 package com.acme.models;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.acme.models.Role.CUSTOMER;
+import java.util.Optional;
 
 public class Customer extends Person {
-
-    private List<Account> accounts;
-    private boolean isLocked;
-    private int failedLoginAttempts;
+    private Optional<SavingsAccount> savingsAccount;
+    private Optional<CheckingAccount> checkingAccount;
     private Role role;
 
-    public Customer(String firstName, String lastName, String email, String password){
-        super(firstName, lastName, email, password);
-
-        this.accounts = new ArrayList<>();
-        this.isLocked = false;
-        this.failedLoginAttempts = 0;
-        this.role = CUSTOMER;
-
-    }
-
-    public void addAccount(Account account){
-        this.accounts.add(account);
-    }
-
-    public List<Account> getAccounts() {
-        return accounts;
-    }
-
-    public void setAccounts(List<Account> accounts) {
-        this.accounts = accounts;
-    }
-
-    public boolean isLocked() {
-        return isLocked;
-    }
-
-    public void setLocked(boolean locked) {
-        isLocked = locked;
-    }
-
-    public void incrementFailedLoginAttempts(){
-        this.failedLoginAttempts++ ;
-    }
-
-    public void resetFailedLoginAttempts(){
-        this.failedLoginAttempts = 0;
-    }
-
-    public int getFailedLoginAttempts() {
-        return failedLoginAttempts;
-    }
-
-    public void setFailedLoginAttempts(int failedLoginAttempts) {
-        this.failedLoginAttempts = failedLoginAttempts;
+    public Customer(String var1, String var2, String var3, String var4) {
+        super(var1, var2, var3, var4);
+        this.role = Role.CUSTOMER;
+        this.savingsAccount = Optional.empty();
+        this.checkingAccount = Optional.empty();
     }
 
     public Role getRole() {
-        return role;
+        return this.role;
+    }
+
+    public void createSavingsAccount(String var1) {
+        if (this.savingsAccount.isEmpty()) {
+            this.savingsAccount = Optional.of(new SavingsAccount(this.getId(), var1));
+        }
+
+    }
+
+    public void createCheckingAccount(String var1) {
+        if (this.checkingAccount.isEmpty()) {
+            this.checkingAccount = Optional.of(new CheckingAccount(this.getId(), var1));
+        }
+
+    }
+
+    public void setSavingsAccount(Optional<SavingsAccount> var1) {
+        this.savingsAccount = var1;
+    }
+
+    public void setCheckingAccount(Optional<CheckingAccount> var1) {
+        this.checkingAccount = var1;
+    }
+
+    public Optional<SavingsAccount> getSavingsAccount() {
+        return this.savingsAccount;
+    }
+
+    public Optional<CheckingAccount> getCheckingAccount() {
+        return this.checkingAccount;
+    }
+
+    @Override
+    public String toJson() {
+        return "{\"id\": \"%s\"}".formatted(this.getId());
     }
 }

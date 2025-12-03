@@ -2,13 +2,8 @@ package com.acme.models;
 
 import java.math.BigDecimal;
 
-public class Card {
-
-    private CardType type;
-
+public abstract class CreditCard {
     private final BigDecimal limit = new BigDecimal("0.0");
 
-    public CardType getType() {
-        return type;
-    }
+    public abstract String getType();
 }
