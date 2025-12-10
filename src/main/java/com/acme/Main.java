@@ -171,9 +171,9 @@ public class Main {
             try {
                 switch (choice) {
                     case "1" -> createAccount(customer, banking);
-                    case "2" -> doDeposit(customer, banking);
-                    case "3" -> doWithdraw(customer, banking);
-                    case "4" -> doTransfer(customer, banking);
+                    case "2" -> doDeposit(customer, banking, transactions);
+                    case "3" -> doWithdraw(customer, banking, transactions);
+                    case "4" -> doTransfer(customer, banking, transactions);
                     case "5" -> transactions.getStatement(customer.getId())
                             .forEach(tx -> System.out.printf("%s - %s %s (Balance: %s)\n",
                                     tx.getCreatedAt(), tx.getType(), tx.getDescription(), tx.getPostBalance()));
@@ -207,25 +207,41 @@ public class Main {
         System.out.println("Account created.");
     }
 
-    private static void doDeposit(Customer customer, BankingService banking) {
+    private static void doDeposit(Customer customer, BankingService banking, TransactionService transactions) {
         Account account = pickAccount(customer);
         System.out.print("Amount: ");
         BigDecimal amount = new BigDecimal(scanner.nextLine());
         Card card = pickCardFromAccount(account);
         banking.deposit(customer, account, amount, card);
         System.out.println("Deposit completed. Balance: " + account.getBalance());
+
+        transactions.getStatement(customer.getId()).stream()
+                .filter(tx -> tx.getSourceAccountId().equals(account.getAccountId()))
+                .filter(tx -> tx.getType() == TransactionType.DEPOSIT)
+                .max(java.util.Comparator.comparing(Transaction::getCreatedAt))
+                .ifPresent(tx -> System.out.printf("Transaction: %s - %s %s (Balance: %s)\n",
+                        tx.getCreatedAt(), tx.getType(), tx.getDescription(), tx.getPostBalance()));
     }
 
-    private static void doWithdraw(Customer customer, BankingService banking) {
+    private static void doWithdraw(Customer customer, BankingService banking,  TransactionService transactions) {
         Account account = pickAccount(customer);
         System.out.print("Amount: ");
         BigDecimal amount = new BigDecimal(scanner.nextLine());
         Card card = pickCardFromAccount(account);
         banking.withdraw(customer, account, amount, card);
         System.out.println("Withdraw completed. Balance: " + account.getBalance());
+
+        transactions.getStatement(customer.getId()).stream()
+                .filter(tx -> tx.getSourceAccountId().equals(account.getAccountId()))
+                .filter(tx -> tx.getType() == TransactionType.WITHDRAW || tx.getType() == TransactionType.OVERDRAFT_FEE)
+                .sorted(java.util.Comparator.comparing(Transaction::getCreatedAt).reversed())
+                .limit(2)
+                .sorted(java.util.Comparator.comparing(Transaction::getCreatedAt))
+                .forEach(tx -> System.out.printf("Transaction: %s - %s %s (Balance: %s)\n",
+                        tx.getCreatedAt(), tx.getType(), tx.getDescription(), tx.getPostBalance()));
     }
 
-    private static void doTransfer(Customer customer, BankingService banking) {
+    private static void doTransfer(Customer customer, BankingService banking,  TransactionService transactions) {
         Account source = pickAccount(customer);
         System.out.print("Transfer to your own account? (y/n): ");
         boolean own = scanner.nextLine().equalsIgnoreCase("y");
@@ -246,6 +262,16 @@ public class Main {
         Card card = pickCardFromAccount(source);
         banking.transfer(customer, source, destination, amount, card);
         System.out.println("Transfer completed. Balance: " + source.getBalance());
+
+        transactions.getStatement(customer.getId()).stream()
+                .filter(tx -> tx.getSourceAccountId().equals(source.getAccountId()) ||
+                        tx.getDestinationAccountId() != null && tx.getDestinationAccountId().equals(source.getAccountId()))
+                .filter(tx -> tx.getType() == TransactionType.TRANSFER || tx.getType() == TransactionType.DEPOSIT)
+                .sorted(java.util.Comparator.comparing(Transaction::getCreatedAt).reversed())
+                .limit(2)
+                .sorted(java.util.Comparator.comparing(Transaction::getCreatedAt))
+                .forEach(tx -> System.out.printf("Transaction: %s - %s %s (Balance: %s)\n",
+                        tx.getCreatedAt(), tx.getType(), tx.getDescription(), tx.getPostBalance()));
     }
 
     private static void filterTransactions(Customer customer, TransactionService transactions) {
