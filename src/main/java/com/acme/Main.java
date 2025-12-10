@@ -175,8 +175,8 @@ public class Main {
                     case "3" -> doWithdraw(customer, banking);
                     case "4" -> doTransfer(customer, banking);
                     case "5" -> transactions.getStatement(customer.getId())
-                            .forEach(tx -> System.out.printf("%s - %s %s\n",
-                                    tx.getCreatedAt(), tx.getType(), tx.getDescription()));
+                            .forEach(tx -> System.out.printf("%s - %s %s (Balance: %s)\n",
+                                    tx.getCreatedAt(), tx.getType(), tx.getDescription(), tx.getPostBalance()));
                     case "6" -> filterTransactions(customer, transactions);
                     case "7" -> {
                         return;
@@ -286,11 +286,8 @@ public class Main {
             System.out.println("No transactions in selected range.");
             return;
         }
-        filtered.forEach(tx -> System.out.printf("%s - %s %s\n",
-                tx.getCreatedAt(), tx.getType(), tx.getDescription()));
-        transactions.filterByDateRange(customer.getId(), from, today)
-                .forEach(tx -> System.out.printf("%s - %s %s\n",
-                        tx.getCreatedAt(), tx.getType(), tx.getDescription()));
+        filtered.forEach(tx -> System.out.printf("%s - %s %s (Balance: %s)\n",
+                tx.getCreatedAt(), tx.getType(), tx.getDescription(), tx.getPostBalance()));
     }
 
     private static Account pickAccount(Customer customer) {

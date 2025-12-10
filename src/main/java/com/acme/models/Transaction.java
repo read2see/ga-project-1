@@ -97,6 +97,7 @@ public class Transaction {
         this.amount = amount;
     }
 
+    @JsonProperty
     public BigDecimal getPostBalance() {
         return postBalance;
     }
