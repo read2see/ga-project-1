@@ -53,6 +53,10 @@ public class Transaction {
         if (type == TransactionType.TRANSFER && destination.isPresent()) {
             return template.formatted(amount, destination.get().getAccountNumber());
         }
+        if (type == TransactionType.DEPOSIT && destination.isPresent()) {
+            return "Deposited %s from account %s".formatted(amount, destination.get().getAccountNumber());
+        }
+
         return template.formatted(amount);
     }
 
