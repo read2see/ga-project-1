@@ -32,7 +32,7 @@ public class BankingService {
     }
 
     public BigDecimal deposit(Customer customer, Account account, BigDecimal amount, Card card) {
-        enforceLimit(customer, TransactionType.DEPOSIT, card, amount, true);
+        enforceLimit(customer, account, TransactionType.DEPOSIT, card, amount, true);
         account.deposit(amount);
         persistCustomerAccount(customer, account);
         databaseService.appendTransaction(customer.getId(),
@@ -41,7 +41,7 @@ public class BankingService {
     }
 
     public BigDecimal withdraw(Customer customer, Account account, BigDecimal amount, Card card) {
-        enforceLimit(customer, TransactionType.WITHDRAW, card, amount, true);
+        enforceLimit(customer, account, TransactionType.DEPOSIT, card, amount, true);
         BigDecimal before = account.getBalance();
         account.withdraw(amount);
         persistCustomerAccount(customer, account);
@@ -56,7 +56,7 @@ public class BankingService {
 
     public void transfer(Customer owner, Account source, Account destination, BigDecimal amount, Card card) {
         boolean ownAccount = source.isOwnAccountTransfer(destination);
-        enforceLimit(owner, TransactionType.TRANSFER, card, amount, ownAccount);
+        enforceLimit(owner, source, TransactionType.DEPOSIT, card, amount, true);
         source.transferTo(destination, amount);
         persistCustomerAccount(owner, source);
 
@@ -84,6 +84,7 @@ public class BankingService {
     }
 
     private void enforceLimit(Customer customer,
+                              Account account,
                               TransactionType type,
                               Card card,
                               BigDecimal amount,
@@ -101,6 +102,7 @@ public class BankingService {
         }
 
         BigDecimal todaysTotal = databaseService.loadTransactions(customer.getId()).stream()
+                .filter(tx -> tx.getSourceAccountId() != null && tx.getSourceAccountId().equals(account.getAccountId()))
                 .filter(tx -> tx.getCardLabel() != null && tx.getCardLabel().equals(card.getLabel()))
                 .filter(tx -> tx.getType() == type)
                 .filter(tx -> tx.getCreatedAt().toLocalDate().equals(LocalDate.now()))
@@ -108,7 +110,9 @@ public class BankingService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         if (todaysTotal.add(amount).compareTo(limit) > 0) {
-            throw new IllegalStateException("Daily limit exceeded for " + card.getLabel());
+            throw new IllegalStateException("Daily limit exceeded for " +
+                    " on account " + account.getAccountNumber() +
+                    card.getLabel());
         }
     }
 
