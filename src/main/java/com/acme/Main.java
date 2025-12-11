@@ -109,6 +109,7 @@ public class Main {
 
     private static void bankerMenu(Banker banker, BankingService banking, AuthenticationService auth) {
         while (true) {
+            System.out.printf("---\nLogged in as Banker: %s\n---\n",banker.getFullName());
             System.out.println("""
                     Banker actions:
                     1) Register new customer
@@ -158,7 +159,9 @@ public class Main {
     private static void customerMenu(Customer customer,
                                      BankingService banking,
                                      TransactionService transactions) {
+
         while (true) {
+            System.out.printf("---\nLogged in as Customer: %s \n%s\n---\n", customer.getFullName(), customer.getAccountsDetails());
             System.out.println("""
                     1) Create account
                     2) Deposit

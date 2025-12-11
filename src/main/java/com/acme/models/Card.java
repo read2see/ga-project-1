@@ -43,5 +43,6 @@ public abstract class Card {
     public abstract String getLabel();
 
     public abstract CardLimits getLimits();
+
 }
 

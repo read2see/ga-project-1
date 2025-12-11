@@ -82,5 +82,27 @@ public class Customer extends Person {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
     }
+
+    public String getAccountsDetails() {
+
+        StringBuilder template = new StringBuilder();
+
+        if(accounts.isEmpty()) {
+            template.append("No accounts created yet.\n");
+        } else {
+            template.append("My Accounts:\n");
+        }
+
+        accounts.forEach(account -> {
+            template.append("\t- %s| %s | Balance: %s\n%s".formatted(
+                    account.getAccountNumber(),
+                    account.getTypeLabel(),
+                    account.getBalance(),
+                    account.getAccountsCardDetails()
+            ));
+        });
+
+        return template.toString();
+    }
 }
 

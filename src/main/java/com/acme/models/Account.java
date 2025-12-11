@@ -163,5 +163,17 @@ public abstract class Account {
 
     @JsonIgnore
     public abstract String getTypeLabel();
+
+    public String getAccountsCardDetails() {
+
+        StringBuilder template = new StringBuilder("\t\tAccount's issued cards:\n");
+        getCards().forEach(card -> {
+            template.append("\t\t- %s | %s | issue date: %s".formatted(card.getLabel(), card.getCardId(),card.getIssuedOn()));
+        });
+
+        return template.toString();
+    }
+
+
 }
 

@@ -75,7 +75,7 @@ public abstract class Person {
 
     @JsonIgnore
     public String getFullName() {
-        return "%s-%s".formatted(firstName, lastName);
+        return "%s %s".formatted(firstName, lastName);
     }
 
     public boolean verifyPassword(String candidate) {
