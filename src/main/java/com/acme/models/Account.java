@@ -91,11 +91,11 @@ public abstract class Account {
     }
 
     public void addCard(Card card) {
-        boolean alreadyHasType = cards.stream().anyMatch(c -> c.getLabel().equals(card.getLabel()));
-        if (alreadyHasType) {
-            throw new IllegalArgumentException("Card type already issued for this account");
+        if(cards.isEmpty()){
+            cards.add(card);
+        }else{
+            cards.set(0,card);
         }
-        cards.add(card);
     }
 
     public BigDecimal deposit(BigDecimal amount) {
@@ -166,10 +166,11 @@ public abstract class Account {
 
     public String getAccountsCardDetails() {
 
-        StringBuilder template = new StringBuilder("\t\tAccount's issued cards:\n");
-        getCards().forEach(card -> {
-            template.append("\t\t- %s | %s | issue date: %s".formatted(card.getLabel(), card.getCardId(),card.getIssuedOn()));
-        });
+        StringBuilder template = new StringBuilder("\t\tAccount's issued card:\n");
+        var card = cards.get(0);
+        template.append("\t\t- %s | %s | issue date: %s\n".formatted(
+                card.getLabel(), card.getCardId(),card.getIssuedOn()
+            ));
 
         return template.toString();
     }

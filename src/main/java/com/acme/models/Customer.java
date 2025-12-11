@@ -94,7 +94,7 @@ public class Customer extends Person {
         }
 
         accounts.forEach(account -> {
-            template.append("\t- %s| %s | Balance: %s\n%s".formatted(
+            template.append("\t- %s | %s | Balance: %s\n%s".formatted(
                     account.getAccountNumber(),
                     account.getTypeLabel(),
                     account.getBalance(),

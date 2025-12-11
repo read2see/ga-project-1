@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.UUID;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.stream.IntStream;
 
 public class Main {
 
@@ -35,7 +36,7 @@ public class Main {
             System.out.println("3) Exit");
             String choice = scanner.nextLine();
             switch (choice) {
-                case "1" -> handleLogin(auth, banking, transactions);
+                case "1" -> handleLogin(auth, banking, transactions, database);
                 case "2" -> registerCustomer(auth);
                 case "3" -> {
                     System.out.println("Goodbye!");
@@ -71,7 +72,8 @@ public class Main {
 
     private static void handleLogin(AuthenticationService auth,
                                     BankingService banking,
-                                    TransactionService transactions) {
+                                    TransactionService transactions,
+                                    FileDatabaseService database) {
         System.out.print("Email: ");
         String email = scanner.nextLine();
         System.out.print("Password: ");
@@ -164,24 +166,24 @@ public class Main {
             System.out.printf("---\nLogged in as Customer: %s \n%s\n---\n", customer.getFullName(), customer.getAccountsDetails());
             System.out.println("""
                     1) Create account
-                    2) Deposit
-                    3) Withdraw
-                    4) Transfer
-                    5) Statement
-                    6) Filter transactions
-                    7) Logout""");
+                    2) Issue New Card
+                    3) Deposit
+                    4) Withdraw
+                    5) Transfer
+                    6) Statement
+                    7) Filter transactions
+                    8) Logout""");
             String choice = scanner.nextLine();
             try {
                 switch (choice) {
                     case "1" -> createAccount(customer, banking);
-                    case "2" -> doDeposit(customer, banking, transactions);
-                    case "3" -> doWithdraw(customer, banking, transactions);
-                    case "4" -> doTransfer(customer, banking, transactions);
-                    case "5" -> transactions.getStatement(customer.getId())
-                            .forEach(tx -> System.out.printf("%s - %s %s (Balance: %s)\n",
-                                    tx.getCreatedAt(), tx.getType(), tx.getDescription(), tx.getPostBalance()));
-                    case "6" -> filterTransactions(customer, transactions);
-                    case "7" -> {
+                    case "2" -> issueNewCard(customer, banking);
+                    case "3" -> doDeposit(customer, banking, transactions);
+                    case "4" -> doWithdraw(customer, banking, transactions);
+                    case "5" -> doTransfer(customer, banking, transactions);
+                    case "6" -> getAccountStatement(customer, transactions);
+                    case "7" -> filterTransactions(customer, transactions);
+                    case "8" -> {
                         return;
                     }
                     default -> System.out.println("Invalid choice");
@@ -210,12 +212,36 @@ public class Main {
         System.out.println("Account created.");
     }
 
+    private static void issueNewCard(Customer customer, BankingService banking) {
+        if(customer.getAccounts().isEmpty()) {
+            System.out.println("Operation failed: You currently have no accounts.");
+            return;
+        }
+
+        Account account = pickAccount(customer);
+
+        if(account.getCards().isEmpty()) {
+            System.out.println("Operation failed: your account does not have any cards to upgrade.");
+            return;
+        }
+
+        Card card = pickNewCard();
+
+        if(account.getCards().get(0).getLabel().equals(card.getLabel())) {
+            System.out.println("Operation failed: you already have a card of this type issued.");
+            return;
+        }
+
+        banking.issueNewCard(customer, account, card);
+        System.out.printf("New %s issued to your account (%s)\n", card.getLabel(), account.getAccountNumber());
+    }
+
     private static void doDeposit(Customer customer, BankingService banking, TransactionService transactions) {
         Account account = pickAccount(customer);
         System.out.print("Amount: ");
         BigDecimal amount = new BigDecimal(scanner.nextLine());
-        Card card = pickCardFromAccount(account);
-        banking.deposit(customer, account, amount, card);
+
+        banking.deposit(customer, account, amount, account.getCards().get(0));
         System.out.println("Deposit completed. Balance: " + account.getBalance());
 
         transactions.getStatement(customer.getId()).stream()
@@ -230,8 +256,7 @@ public class Main {
         Account account = pickAccount(customer);
         System.out.print("Amount: ");
         BigDecimal amount = new BigDecimal(scanner.nextLine());
-        Card card = pickCardFromAccount(account);
-        banking.withdraw(customer, account, amount, card);
+        banking.withdraw(customer, account, amount, account.getCards().get(0));
         System.out.println("Withdraw completed. Balance: " + account.getBalance());
 
         transactions.getStatement(customer.getId()).stream()
@@ -262,8 +287,8 @@ public class Main {
         }
         System.out.print("Amount: ");
         BigDecimal amount = new BigDecimal(scanner.nextLine());
-        Card card = pickCardFromAccount(source);
-        banking.transfer(customer, source, destination, amount, card);
+
+        banking.transfer(customer, source, destination, amount, source.getCards().get(0));
         System.out.println("Transfer completed. Balance: " + source.getBalance());
 
         transactions.getStatement(customer.getId()).stream()
@@ -275,6 +300,16 @@ public class Main {
                 .sorted(java.util.Comparator.comparing(Transaction::getCreatedAt))
                 .forEach(tx -> System.out.printf("Transaction: %s - %s %s (Balance: %s)\n",
                         tx.getCreatedAt(), tx.getType(), tx.getDescription(), tx.getPostBalance()));
+    }
+
+    private static void getAccountStatement(Customer customer, TransactionService transactions) {
+        Account account = pickAccount(customer);
+        System.out.printf("Account No. %s | %s | Balance: %s\n", account.getAccountNumber(), account.getTypeLabel(), account.getBalance());
+        System.out.println("Transactions:");
+        transactions.getStatement(customer.getId())
+            .forEach(tx -> System.out.printf("%s - %s %s (Balance: %s)\n",
+                tx.getCreatedAt(), tx.getType(), tx.getDescription(), tx.getPostBalance()));
+
     }
 
     private static void filterTransactions(Customer customer, TransactionService transactions) {
@@ -342,10 +377,13 @@ public class Main {
             case "1" -> new MastercardCard();
             case "2" -> new MastercardTitaniumCard();
             case "3" -> new MastercardPlatinumCard();
-            default -> new MastercardCard();
+            default -> throw new IllegalStateException("Invalid card type option");
         };
     }
 
+    // I implemented this due to mix up with requirement
+    // a Customer having 1 or both saving and checking account
+    // and an account having 1 card type, but after reviewing requirements, this is no longer needed
     private static Card pickCardFromAccount(Account account) {
         System.out.println("Pick Card:");
         if (account.getCards().isEmpty()) {

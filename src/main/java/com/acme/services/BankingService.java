@@ -26,6 +26,11 @@ public class BankingService {
         return account;
     }
 
+    public void issueNewCard(Customer customer,Account account, Card card) {
+        account.addCard(card);
+        databaseService.saveCustomer(customer);
+    }
+
     public BigDecimal deposit(Customer customer, Account account, BigDecimal amount, Card card) {
         enforceLimit(customer, TransactionType.DEPOSIT, card, amount, true);
         account.deposit(amount);
