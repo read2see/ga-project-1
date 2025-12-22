@@ -1,11 +1,7 @@
 package com.acme;
 
 import com.acme.models.*;
-import com.acme.services.AuthenticationService;
-import com.acme.services.BankingService;
-import com.acme.services.FileAuthenticationService;
-import com.acme.services.FileDatabaseService;
-import com.acme.services.TransactionService;
+import com.acme.services.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -79,20 +75,53 @@ public class Main {
         System.out.print("Password: ");
         String password = scanner.nextLine();
 
-        Optional<Person> logged = auth.login(email, password);
-        if (logged.isEmpty()) {
-            System.out.println("Login failed or account locked. Try again later.");
-            return;
-        }
-        Person user = logged.get();
-        if (user.getRole() == Role.BANKER) {
-            System.out.println("Logged in as Banker " + user.getFullName());
-            bankerMenu((Banker) user, banking, auth);
+        LoginResult result = auth.login(email, password);
+
+        if (result.isSuccess()) {
+            Person user = result.getPerson().orElseThrow();
+
+            if (user.getRole() == Role.BANKER) {
+                System.out.println("Logged in as Banker " + user.getFullName());
+                bankerMenu((Banker) user, banking, auth);
+            } else {
+                Customer customer = (Customer) user;
+                System.out.println("Logged in as Customer " + customer.getFullName());
+                customerMenu(customer, banking, transactions);
+            }
         } else {
-            Customer customer = (Customer) user;
-            System.out.println("Logged in as Customer " + customer.getFullName());
-            customerMenu(customer, banking, transactions);
+            switch (result.getStatus()) {
+                case USER_NOT_FOUND ->
+                        System.out.println("Login failed: No account found with this email address.");
+                case ACCOUNT_LOCKED -> {
+                    java.time.LocalDateTime lockedUntil = result.getLockedUntil();
+                    if (lockedUntil != null) {
+                        java.time.Duration remaining = java.time.Duration.between(java.time.LocalDateTime.now(), lockedUntil);
+                        long minutes = remaining.toMinutes();
+                        long seconds = remaining.minusMinutes(minutes).getSeconds();
+                        if (minutes > 0) {
+                            System.out.printf("Login failed: Account is locked. Please try again in %d minute(s) and %d second(s).%n", minutes, seconds);
+                        } else {
+                            System.out.printf("Login failed: Account is locked. Please try again in %d second(s).%n", seconds);
+                        }
+                    } else {
+                        System.out.println("Login failed: Account is locked. Please try again later.");
+                    }
+                }
+                case INVALID_PASSWORD -> {
+                    int remainingAttempts = result.getRemainingAttempts();
+                    if (remainingAttempts > 0) {
+                        System.out.printf("Login failed: Invalid password. %d attempt(s) remaining before account lock.%n", remainingAttempts);
+                    } else {
+                        System.out.println("Login failed: Invalid password. Account has been locked due to too many failed attempts.");
+                    }
+                }
+                case INVALID_PASSWORD_BANKER ->
+                        System.out.println("Login failed: Invalid password.");
+                default ->
+                        System.out.println("Login failed. Please try again.");
+            }
         }
+
     }
 
     private static void registerCustomer(AuthenticationService auth) {

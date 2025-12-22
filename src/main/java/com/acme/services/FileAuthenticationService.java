@@ -19,10 +19,10 @@ public class FileAuthenticationService implements AuthenticationService {
     }
 
     @Override
-    public Optional<Person> login(String email, String password) {
+    public LoginResult login(String email, String password) {
         Optional<Person> person = databaseService.findByEmail(email);
         if (person.isEmpty()) {
-            return Optional.empty();
+            return LoginResult.userNotFound();
         }
         Person user = person.get();
 
@@ -31,25 +31,33 @@ public class FileAuthenticationService implements AuthenticationService {
                 databaseService.saveCustomer(customer);
             }
             if (customer.isLocked()) {
-                return Optional.empty();
+                return LoginResult.accountLocked(customer.getLockedUntil());
             }
             if (!customer.verifyPassword(password)) {
                 customer.incrementFailedAttempts(MAX_ATTEMPTS, LOCK_DURATION);
                 databaseService.saveCustomer(customer);
-                return Optional.empty();
+
+                int currentAttempts = customer.getFailedLoginAttempts();
+                int remainingAttempts = MAX_ATTEMPTS - currentAttempts;
+
+                if (customer.isLocked()) {
+                    return LoginResult.accountLocked(customer.getLockedUntil());
+                }
+
+                return LoginResult.invalidPassword(remainingAttempts, MAX_ATTEMPTS);
             }
             customer.resetFailedAttempts();
             databaseService.saveCustomer(customer);
-            return Optional.of(customer);
+            return LoginResult.success(customer);
         }
 
         if (user instanceof Banker banker) {
             if (!banker.verifyPassword(password)) {
-                return Optional.empty();
+                return LoginResult.invalidPasswordBanker();
             }
-            return Optional.of(banker);
+            return LoginResult.success(banker);
         }
-        return Optional.empty();
+        return LoginResult.userNotFound();
     }
 
     @Override

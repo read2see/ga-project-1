@@ -31,10 +31,21 @@ class BankingServiceTest {
     void locksCustomerAfterThreeFailedAttempts() {
         Customer customer = auth.registerCustomer("Jane", "Doe", "jane@example.com", "secret");
 
-        assertTrue(auth.login("jane@example.com", "wrong").isEmpty());
-        assertTrue(auth.login("jane@example.com", "wrong").isEmpty());
-        assertTrue(auth.login("jane@example.com", "wrong").isEmpty());
-        assertTrue(auth.login("jane@example.com", "secret").isEmpty(), "Should be locked after 3 failures");
+        LoginResult result1 = auth.login("jane@example.com", "wrong");
+        assertFalse(result1.isSuccess());
+        assertEquals(LoginResult.Status.INVALID_PASSWORD, result1.getStatus());
+
+        LoginResult result2 = auth.login("jane@example.com", "wrong");
+        assertFalse(result2.isSuccess());
+        assertEquals(LoginResult.Status.INVALID_PASSWORD, result2.getStatus());
+
+        LoginResult result3 = auth.login("jane@example.com", "wrong");
+        assertFalse(result3.isSuccess());
+        assertEquals(LoginResult.Status.ACCOUNT_LOCKED, result3.getStatus(), "Should be locked after 3 failures");
+
+        LoginResult result4 = auth.login("jane@example.com", "secret");
+        assertFalse(result4.isSuccess());
+        assertEquals(LoginResult.Status.ACCOUNT_LOCKED, result4.getStatus(), "Should still be locked");
 
         // Simulate lock expiration
         customer = database.findByEmail("jane@example.com")
@@ -44,9 +55,10 @@ class BankingServiceTest {
         customer.setLockedUntil(LocalDateTime.now().minusMinutes(2));
         database.saveCustomer(customer);
 
-        Optional<Person> unlocked = auth.login("jane@example.com", "secret");
-        assertTrue(unlocked.isPresent());
-        assertFalse(((Customer) unlocked.get()).isLocked());
+        LoginResult unlocked = auth.login("jane@example.com", "secret");
+        assertTrue(unlocked.isSuccess());
+        assertTrue(unlocked.getPerson().isPresent());
+        assertFalse(((Customer) unlocked.getPerson().get()).isLocked());
     }
 
     @Test
