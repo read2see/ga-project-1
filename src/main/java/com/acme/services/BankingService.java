@@ -41,7 +41,7 @@ public class BankingService {
     }
 
     public BigDecimal withdraw(Customer customer, Account account, BigDecimal amount, Card card) {
-        enforceLimit(customer, account, TransactionType.DEPOSIT, card, amount, true);
+        enforceLimit(customer, account, TransactionType.WITHDRAW, card, amount, true);
         BigDecimal before = account.getBalance();
         account.withdraw(amount);
         persistCustomerAccount(customer, account);
@@ -56,7 +56,7 @@ public class BankingService {
 
     public void transfer(Customer owner, Account source, Account destination, BigDecimal amount, Card card) {
         boolean ownAccount = source.isOwnAccountTransfer(destination);
-        enforceLimit(owner, source, TransactionType.DEPOSIT, card, amount, true);
+        enforceLimit(owner, source, TransactionType.TRANSFER, card, amount, ownAccount);
         source.transferTo(destination, amount);
         persistCustomerAccount(owner, source);
 
@@ -111,7 +111,8 @@ public class BankingService {
 
         if (todaysTotal.add(amount).compareTo(limit) > 0) {
             throw new IllegalStateException("Daily limit exceeded for " +
-                    " on account " + account.getAccountNumber() +
+                    account.getCards().get(0).getLabel()
+                    + " on account " + account.getAccountNumber() +
                     card.getLabel());
         }
     }
