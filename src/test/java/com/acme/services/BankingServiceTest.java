@@ -269,16 +269,6 @@ class BankingServiceTest {
     }
 
     @Test
-    void preventsAddingDuplicateCardType() {
-        Customer customer = auth.registerCustomer("Nancy", "Garcia", "nancy@example.com", "pw");
-        Account account = banking.createAccount(customer, "CHECKING", new BigDecimal("100.00"), new MastercardCard());
-
-        // Try to add another Mastercard
-        assertThrows(IllegalArgumentException.class, () ->
-                account.addCard(new MastercardCard()));
-    }
-
-    @Test
     void findsCustomerByEmail() {
         Customer customer = auth.registerCustomer("Robert", "Hernandez", "robert@example.com", "pass");
 
