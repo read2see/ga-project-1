@@ -89,6 +89,10 @@ public class FileDatabaseService {
         writeEncrypted(transactionsPath(customerId), existing);
     }
 
+    public void wipeTransactions(UUID customerId) {
+        writeEncrypted(transactionsPath(customerId), new ArrayList<Transaction>());
+    }
+
     private <T> List<T> readUsers(String prefix, TypeReference<T> typeRef) {
         Path usersDir = baseDir.resolve("users");
         if (!Files.exists(usersDir)) {

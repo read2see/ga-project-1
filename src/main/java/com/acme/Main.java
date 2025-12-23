@@ -8,10 +8,13 @@ import java.time.LocalDate;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
 import java.util.Scanner;
-import java.util.stream.IntStream;
+import de.vandermeer.asciitable.AsciiTable;
+import de.vandermeer.asciitable.CWC_LongestLine;
+import de.vandermeer.asciithemes.a7.A7_Grids;
 
 public class Main {
 
@@ -333,12 +336,8 @@ public class Main {
 
     private static void getAccountStatement(Customer customer, TransactionService transactions) {
         Account account = pickAccount(customer);
-        System.out.printf("Account No. %s | %s | Balance: %s\n", account.getAccountNumber(), account.getTypeLabel(), account.getBalance());
-        System.out.println("Transactions:");
-        transactions.getStatement(customer.getId())
-            .forEach(tx -> System.out.printf("%s - %s %s (Balance: %s)\n",
-                tx.getCreatedAt(), tx.getType(), tx.getDescription(), tx.getPostBalance()));
-
+        System.out.println(buildAccountInfo(customer, account));
+        System.out.println(buildStatementTable(account, transactions.getStatement(customer.getId()), false));
     }
 
     private static void filterTransactions(Customer customer, TransactionService transactions) {
@@ -408,6 +407,99 @@ public class Main {
             case "3" -> new MastercardPlatinumCard();
             default -> throw new IllegalStateException("Invalid card type option");
         };
+    }
+
+    private static String buildAccountInfo(Customer customer, Account account) {
+        StringBuilder info = new StringBuilder();
+        info.append("\n").append("=".repeat(60)).append("\n");
+        info.append("ACCOUNT STATEMENT\n");
+        info.append("=".repeat(60)).append("\n");
+        info.append(String.format("First Name: %s\n", customer.getFirstName()));
+        info.append(String.format("Last Name: %s\n", customer.getLastName()));
+        info.append(String.format("Email: %s\n", customer.getEmail()));
+        info.append(String.format("Account Number: %s\n", account.getAccountNumber()));
+
+        if (!account.getCards().isEmpty()) {
+            Card card = account.getCards().get(0);
+            info.append(String.format("Card:%s\n", card.getLabel()));
+        } else {
+            info.append("Card: No card issued\n");
+        }
+
+        info.append(String.format("Balance: $%s\n", account.getBalance()));
+        info.append("=".repeat(60)).append("\n");
+        return info.toString();
+    }
+
+    private static String buildStatementTable(Account account, List<Transaction> allTransactions, boolean shouldTruncate) {
+
+        List<Transaction> accountTransactions = allTransactions.stream()
+                .filter(tx -> tx.getSourceAccountId() != null && tx.getSourceAccountId().equals(account.getAccountId()))
+                .sorted(java.util.Comparator.comparing(Transaction::getCreatedAt))
+                .toList();
+
+        if (accountTransactions.isEmpty()) {
+            return "\nNo transactions found for this account.\n";
+        }
+
+        AsciiTable table = new AsciiTable();
+        table.getContext().setWidth(150);
+        table.getContext().setGrid(A7_Grids.minusBarPlusEquals());
+        CWC_LongestLine cwc = new CWC_LongestLine();
+        table.getRenderer().setCWC(cwc);
+
+        table.addRule();
+        table.addRow(
+                "Date",
+                "Type",
+                "Description",
+                "Withdrawals",
+                "Deposits",
+                "Balance"
+        );
+        table.addRule();
+
+        for (Transaction tx : accountTransactions) {
+            String date = tx.getCreatedAt().toLocalDate().toString() + " " +
+                    tx.getCreatedAt().toLocalTime().toString().substring(0, 8);
+            String type = tx.getType().name();
+            String description = tx.getDescription();
+            String withdrawals = "";
+            String deposits = "";
+            String balance = "$" + tx.getPostBalance();
+
+            boolean isSourceAccount = tx.getSourceAccountId() != null &&
+                    tx.getSourceAccountId().equals(account.getAccountId());
+
+            if (tx.getType() == TransactionType.WITHDRAW || tx.getType() == TransactionType.OVERDRAFT_FEE) {
+                withdrawals = "$" + tx.getAmount();
+            } else if (tx.getType() == TransactionType.DEPOSIT) {
+                deposits = "$" + tx.getAmount();
+            } else if (tx.getType() == TransactionType.TRANSFER) {
+                if (isSourceAccount) {
+                    withdrawals = "$" + tx.getAmount();
+                }
+            }
+
+            if (description.length() > 35 && shouldTruncate) {
+                description = description.substring(0, 32) + "...";
+            }
+
+            table.addRow(
+                    date,
+                    type,
+                    description,
+                    withdrawals,
+                    deposits,
+                    balance
+            );
+        }
+
+        table.addRule();
+        StringBuilder result = new StringBuilder();
+        result.append("\nTRANSACTIONS\n");
+        result.append(table.render());
+        return result.toString();
     }
 
     // I implemented this due to mix up with requirement

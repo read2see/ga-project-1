@@ -11,6 +11,7 @@ A Java command-line banking application.
 - Guava
 - AES-GCM
 - Diagrams using [Draw.io](draw.io)
+- [Ascii Table](https://github.com/vdmeer/asciitable)
 
 ## Trello Board
 [Project Tasks](https://trello.com/b/NjTXqxpV/project-tasks)
